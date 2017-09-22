@@ -15,7 +15,7 @@
 //0 :5V 1:3.3V
 #define OUTPUT_power 0
 
-unsigned char mastervol = (0x3F << 2);
+unsigned char mastervol = (0x33 << 2);
 
 unsigned char vovol = (0x18 << 2);
 unsigned char chvol = (0x18 << 2);

@@ -3,6 +3,7 @@
  *        for YMF825 
  * 
  *    2017/9/16
+ *         9/20
  *    Ringoro
  */
 
@@ -34,6 +35,8 @@ char tname[16]="Defalut Tone";
 
 int op=1;
 int tnum=0;   /* Tone number 1..10 */
+
+#define MAXTONE 16
 
 // Parameter Matrix Position
 
@@ -169,7 +172,14 @@ void keyinput(char c)
       printparam();
       dumpparams();
       curspos(paramx,paramy);
-      break;  
+      break; 
+    case 'i':
+    case 'I':
+      import();
+      cls();
+      printparam();
+      curspos(paramx,paramy);
+      break;
   }
 }
 
@@ -753,9 +763,21 @@ void dumpparams(void)
 {
   char s[32];
   int i;
-  Serial.println(F("\n/*"));
-  Serial.println(tname);
-  Serial.println(F("*/\n"));
+  Serial.print(F("\n/* "));
+  Serial.print(tname);
+  Serial.println(F(" */\n"));
+
+  sprintf(s,"%d,%d,",toneparams.boctv,toneparams.lfoalg);
+  Serial.print(s);
+  for(i=0;i<4;i++){
+      sprintf(s,"%d,%d,%d,%d,%d,%d,%d,",
+      toneparams.op[i][0],toneparams.op[i][1],toneparams.op[i][2],toneparams.op[i][3],toneparams.op[i][4],toneparams.op[i][5],toneparams.op[i][6]);
+      Serial.print(s);
+  }
+  Serial.println("");
+
+  return;
+  
   sprintf(s,"0x%02X,0x%02X,",toneparams.boctv,toneparams.lfoalg);
   Serial.println(s);
   for(i=0;i<4;i++){
@@ -881,13 +903,19 @@ void printparam(void)
 
 }
 
-char *serialinline()
+/*
+ * Input Line
+ * 
+ * maxc : max charactor
+ */
+
+char *serialinline(int maxc)
 {
-    static char s[11];
+    static char s[130];
     char c=0;
     int i=0;
 
-  while((c != CR) && (c != ESC) && (i<10)){
+  while((c != CR) && (c != ESC) && (i<maxc)){
     if(Serial.available()){
       c=Serial.read();
       Serial.print(c);
@@ -918,12 +946,12 @@ void tonesave()
   shownames();
    
   Serial.print(F("Save Tone No.? "));
-  if((s=serialinline())==NULL)
+  if((s=serialinline(10))==NULL)
       {return;}
 
   n=atoi(s);
-  if(n<0 || n>10)
-      return;   
+  if(n <= 0 || n>MAXTONE)
+     { return;  }
   Serial.print(n,DEC);
   saveparams(n-1);
   tnum=n;
@@ -941,12 +969,12 @@ void toneload()
   shownames();
 
   Serial.print(F("Load Tone No.? "));
-  if((s=serialinline())==NULL)
+  if((s=serialinline(10))==NULL)
       {return;}
 
   n=atoi(s);
-  if(n<0 || n>10)
-      return;   
+  if(n <= 0 || n>MAXTONE)
+    {  return; }   
   Serial.print(n,DEC);
   loadparams(n-1);
   tnum=n;
@@ -962,10 +990,8 @@ void toneload()
 
 void saveparams(int n)
 {
-
   EEPROM.put(n*48   ,toneparams);
-  EEPROM.put(n*48+32,tname);
-  
+  EEPROM.put(n*48+32,tname);  
 }
 void loadparams(int n)
 {
@@ -977,8 +1003,9 @@ void shownames()
 {
   char tn[16];
   int n;
+  cursgoto(1,1);
   Serial.println("");
-  for(n=0;n<10;n++){
+  for(n=0;n<MAXTONE;n++){
       EEPROM.get(n*48+32,tn);
       Serial.print(n+1,DEC);
       Serial.print(F("[ "));
@@ -986,5 +1013,39 @@ void shownames()
       Serial.println(F(" ]"));
   }
 }
+/*
+ * Import Tone parameter csv
+ * 
+ */
 
+void import()
+{
+  char *s, *tok;
+  unsigned char d[32],*tg;
+  int i,j,k=0;
+
+  cursgoto(1,TNAME+1);
+  Serial.println(F("Import : "));
+ if((s=serialinline(120))==NULL)
+      {return;}
+  // Serial.print(s);
+   Serial.println("");
+  tok=strtok(s,",");
+  while(tok != NULL && k < 31){
+    d[k++] = (unsigned char) atoi(tok);
+//    Serial.println(d[k-1],DEC);
+    tok=strtok(NULL,",");
+  }
+  if(k<29){
+    Serial.println(F("Format Error"));
+    return;
+  }
+  
+  tg = (unsigned char *) &toneparams;
+  for(i=0;i<30;i++){
+    *tg++ = d[i];
+  }
+
+  
+}
 
