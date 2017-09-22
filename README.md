@@ -1,6 +1,7 @@
 # YMF825voiceeditor
 
-YMF825 voice editor arduino , VT100ターミナルで動作する YMF825用ボイスエディタ　スケッチです 
+YMF825 voice editor arduino , VT100ターミナルで動作する YMF825用ボイスエディタ　スケッチです。
+
 ※2017/9/22 修正アップデートしました
 
 YMF825 boardとArduino用に配線が必要です 下記を参照下さい
